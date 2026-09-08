@@ -1,0 +1,6 @@
+{
+  "name": "GenericMed Help",
+  "description": "Online generic medicine price comparison & purchase platform with canonical variant matrix, bioequivalence verification, and multi-pharmacy offer comparison.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
