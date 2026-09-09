@@ -1,18 +1,37 @@
-import { db } from '../config/database';
+import { Medicine } from '../models/Medicine';
+import { PharmacyOffer } from '../models/PharmacyOffer';
 import { MEDICINES, PHARMACY_OFFERS } from '../../src/data/mockData';
 
-export function seedMockData() {
-  const medicine = db.prepare('INSERT OR IGNORE INTO medicines (id, data, name, salt_name, therapeutic_class) VALUES (?, ?, ?, ?, ?)');
-  const pharmacy = db.prepare('INSERT OR IGNORE INTO pharmacies (id, data, name, drug_license_number) VALUES (?, ?, ?, ?)');
-  const offer = db.prepare('INSERT OR IGNORE INTO pharmacy_offers (id, pharmacy_id, data) VALUES (?, ?, ?)');
-  for (const item of MEDICINES) medicine.run(item.id, JSON.stringify(item), item.name, item.saltName, item.therapeuticClass);
-  for (const item of PHARMACY_OFFERS) {
-    pharmacy.run(item.pharmacyId, JSON.stringify(item), item.pharmacyName, item.drugLicenseNumber);
-    offer.run(item.id, item.pharmacyId, JSON.stringify(item));
+export async function seedMockData(): Promise<void> {
+  // Upsert medicines — replace on re-seed so data stays in sync with mockData.ts
+  for (const item of MEDICINES) {
+    await Medicine.findByIdAndUpdate(
+      item.id,
+      {
+        _id: item.id,
+        name: item.name,
+        saltName: item.saltName,
+        therapeuticClass: item.therapeuticClass,
+        data: item as unknown as Record<string, unknown>,
+      },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
   }
-}
 
-if (process.argv[1]?.endsWith('seedMockData.ts')) {
-  // The standalone seed command requires the schema to exist, so use the server initializer instead.
-  console.log('Seed data is applied automatically when the server starts.');
+  // Upsert pharmacy offers
+  for (const item of PHARMACY_OFFERS) {
+    await PharmacyOffer.findByIdAndUpdate(
+      item.id,
+      {
+        _id: item.id,
+        pharmacyId: item.pharmacyId,
+        pharmacyName: item.pharmacyName,
+        drugLicenseNumber: item.drugLicenseNumber,
+        data: item as unknown as Record<string, unknown>,
+      },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+  }
+
+  console.log(`Seeded ${MEDICINES.length} medicines and ${PHARMACY_OFFERS.length} pharmacy offers`);
 }

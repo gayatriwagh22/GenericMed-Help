@@ -51,6 +51,7 @@ _Changes that are in development but not yet tagged for release._
 - API-backed catalog and home offer discovery with loading/retry states.
 - Live order-status refresh through the tracking endpoint, with a graceful fallback message.
 - Natural-language, brand, and salt-name catalog matching for AI search, with a deterministic fallback when Gemini is unavailable.
+- Validated patient-context inputs for the dosage-safety flow, which continues to provide education-only safety questions rather than doses.
 
 ---
 

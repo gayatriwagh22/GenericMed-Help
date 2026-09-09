@@ -26,6 +26,7 @@ import { ArchitectureView } from './components/ArchitectureView';
 import { AuthScreen } from './components/AuthScreen';
 import { InteractionChecker } from './components/InteractionChecker';
 import { DosageSafetyScreen } from './components/DosageSafetyScreen';
+import { PrescriptionOCRScreen } from './components/PrescriptionOCRScreen';
 import { addToCart } from './api/cart';
 import { ApiClientError } from './api/client';
 import { 

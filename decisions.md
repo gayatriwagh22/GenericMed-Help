@@ -82,6 +82,42 @@ _Explain why this decision was made over alternatives._
 
 ---
 
+### DEC-009: Migrate from SQLite to MongoDB Atlas
+
+| Field | Details |
+|---|---|
+| **Decision ID** | DEC-009 |
+| **Date** | 2026-09-09 |
+| **Status** | `accepted` — supersedes DEC-007 |
+| **Deciders** | Project implementation |
+
+**Context / Problem:** The developer has a live MongoDB Atlas cluster available. Continuing with the SQLite `node:sqlite` layer would require a migration before any cloud deployment anyway, and Atlas provides free-tier hosted storage, replica sets, and a managed connection pool without local infrastructure.
+
+**Decision:** Replace `node:sqlite` / `DatabaseSync` with **Mongoose 8** connected to MongoDB Atlas. All route files are rewritten against Mongoose models. Seed data is upserted on every server start (idempotent).
+
+**Reasoning:**
+- Atlas eliminates the need to manage a local `.db` file or run a separate database service.
+- Mongoose provides schema validation, index management, and a clean async API that matches the async Express route pattern already in use.
+- The existing data shape (JSON blobs per document) maps naturally to MongoDB's document model — no schema change is required for `medicines` or `pharmacy_offers`.
+- Migrations are no longer needed for Phase 1 scope; Mongoose `upsert` handles seed data safely.
+
+**Alternatives Considered:**
+
+| Alternative | Pros | Cons |
+|---|---|---|
+| Keep SQLite | Zero external dependency | File-based, can't scale, must migrate before deployment |
+| PostgreSQL (Supabase/Neon) | Strong relational model | Requires SQL migrations, no free managed tier without sign-up |
+| MongoDB native driver (no Mongoose) | Smaller footprint | No schema validation, more boilerplate |
+
+**Impact on Project:**
+- `DATABASE_URL` env var replaced by `MONGODB_URI` + optional `MONGODB_DB`.
+- `server/config/database.ts` now exports `connectDatabase()` (async) and `mongoose`.
+- `server/models/` directory created with five Mongoose models: `Medicine`, `PharmacyOffer`, `User`, `CartItem`, `Order`.
+- `server/index.ts` awaits `connectDatabase()` before calling `app.listen()`.
+- `prisma/dev.db` is no longer generated; the `prisma/` directory is kept only for the schema reference.
+
+---
+
 ### DEC-001: React + Vite + TypeScript as Frontend Stack
 
 | Field                  | Details                              |

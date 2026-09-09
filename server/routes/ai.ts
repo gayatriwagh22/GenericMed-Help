@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { db } from '../config/database';
+import { Medicine } from '../models/Medicine';
 import { asyncRoute, ApiError, requiredString } from '../lib/http';
 import { rateLimit } from '../middleware/rateLimit';
 import { generateJson } from '../services/geminiService';
@@ -51,8 +51,8 @@ const catalogFallback = (query: string, catalog: CatalogMedicine[]) => {
 
 router.post('/search', asyncRoute(async (req, res) => {
   const query = requiredString(req.body.query, 'query').slice(0, 300);
-  const rows = db.prepare('SELECT data FROM medicines ORDER BY name').all() as Array<{ data: string }>;
-  const catalog = rows.map(({ data }) => JSON.parse(data) as CatalogMedicine);
+  const rows = await Medicine.find().sort({ name: 1 }).lean();
+  const catalog = rows.map((r) => r.data as unknown as CatalogMedicine);
   const fallbackSuggestions = catalogFallback(query, catalog);
   let suggestions = fallbackSuggestions;
   let source: 'catalog_fallback' | 'gemini' = 'catalog_fallback';
@@ -82,3 +82,21 @@ router.post('/dosage', asyncRoute(async (req, res) => {
   res.json({ data: { ...answer, disclaimer } });
 }));
 export default router;
+
+
+router.post('/ocr', asyncRoute(async (req, res) => {
+  const image = requiredString(req.body.image, 'image');
+  // Validate base64
+  if (!/^[A-Za-z0-9+/=]+$/.test(image)) throw new ApiError(400, 'VALIDATION_ERROR', 'image must be a valid base64 string');
+  
+  const prompt = `Extract all medicine names, dosages, and quantities from this prescription image. Return only valid JSON in this exact format: {"medicines":[{"name":"Medicine Name","dosage":"optional dosage","quantity":"optional qty","notes":"optional notes"}]}. If no medicines are found, return {"medicines":[]}. Do not include any other text.`;
+  
+  const answer = await generateJson<{ medicines: Array<{ name: string; dosage?: string; quantity?: string; notes?: string }> }>(
+    'ocr',
+    { image: image.slice(0, 100) }, // Cache key only includes first 100 chars to avoid huge keys
+    prompt,
+    image // Pass the full base64 image to Gemini
+  );
+  
+  res.json({ data: answer });
+}));

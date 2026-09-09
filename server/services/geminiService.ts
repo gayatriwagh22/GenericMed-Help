@@ -17,13 +17,19 @@ function cacheKey(operation: string, input: unknown) {
   return `${operation}:${createHash('sha256').update(JSON.stringify(input)).digest('hex')}`;
 }
 
-export async function generateJson<T>(operation: string, input: unknown, prompt: string): Promise<T> {
+export async function generateJson<T>(operation: string, input: unknown, prompt: string, imageBase64?: string): Promise<T> {
   const key = cacheKey(operation, input);
   const cached = cache.get(key);
   if (cached && cached.expiresAt > Date.now()) return cached.value as T;
+  
+  const parts: Array<{ text?: string; inlineData?: { mimeType: string; data: string } }> = [{ text: prompt }];
+  if (imageBase64) {
+    parts.push({ inlineData: { mimeType: 'image/jpeg', data: imageBase64 } });
+  }
+  
   const response = await getClient().models.generateContent({
     model: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
-    contents: prompt,
+    contents: parts,
     config: { systemInstruction, responseMimeType: 'application/json', temperature: 0.1 },
   });
   if (!response.text) throw new ApiError(502, 'AI_EMPTY_RESPONSE', 'AI service returned an empty response');

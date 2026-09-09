@@ -9,3 +9,9 @@ export const checkInteractions = (medicines: string[]) => apiFetch<{ data: { sev
 
 export const getDosageSafetyGuidance = (input: { medicine: string; age?: number; weight?: number; condition?: string }) => apiFetch<{ data: { safetyGuidance: string[]; disclaimer: string } }>('/ai/dosage', { method: 'POST', body: JSON.stringify(input) });
 export { aiDisclaimer };
+
+export const parsePrescription = (base64Image: string) => 
+  apiFetch<{ data: { medicines: Array<{ name: string; dosage?: string; quantity?: string; notes?: string }> } }>('/ai/ocr', { 
+    method: 'POST', 
+    body: JSON.stringify({ image: base64Image }) 
+  });

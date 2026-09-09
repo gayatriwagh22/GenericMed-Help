@@ -141,6 +141,7 @@ GenericMed Help helps users find **affordable generic alternatives** to branded 
 - [x] **Persistent order placement** — Authenticated checkout creates idempotent server-side orders.
 - [x] **Live catalog and order tracking** — Home catalog, offer discovery, and order tracking query the backend with user-facing fallback states.
 - [x] **Resilient AI catalog search** — Search recognizes common symptom classes plus brand and salt names, and remains usable through catalog matching if Gemini is unavailable.
+- [x] **Dosage safety guidance** — The medicine detail flow collects validated optional context and returns education-only clinician/pharmacist questions, never dosing instructions.
 - [ ] **Pharmacy reviews system** — User-generated ratings and reviews.
 - [ ] **Push notifications** — Order status updates.
 - [ ] **PWA support** — Offline access and installability.

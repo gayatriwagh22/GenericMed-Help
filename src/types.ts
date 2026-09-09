@@ -138,4 +138,12 @@ export type AppScreen =
   | 'architecture'
   | 'interaction_checker'
   | 'dosage_safety'
+  | 'prescription_ocr'
   | 'auth';
+
+export interface ParsedPrescriptionMedicine {
+  name: string;
+  dosage?: string;
+  quantity?: string;
+  notes?: string;
+}

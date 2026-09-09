@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { CartItem, Order } from '../types';
 import { placeOrder } from '../api/orders';
+import { checkInteractions } from '../api/ai';
 import { ApiClientError } from '../api/client';
 import { 
   ArrowLeft, 
@@ -12,6 +13,7 @@ import {
   Building, 
   Banknote, 
   AlertCircle,
+  AlertTriangle,
   Plus,
   Minus,
   Trash2,
@@ -41,6 +43,22 @@ export const CartCheckoutScreen: React.FC<CartCheckoutScreenProps> = ({
   const [isProcessing, setIsProcessing] = useState(false);
   const [validationSuccess, setValidationSuccess] = useState(true);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
+  const [interactionWarning, setInteractionWarning] = useState<{ summary: string; cautions: string[] } | null>(null);
+
+  // Check for drug interactions on mount
+  useEffect(() => {
+    if (!cartItem) return;
+    const medicines = [cartItem.medicine.name, cartItem.medicine.saltName];
+    checkInteractions(medicines)
+      .then((result) => {
+        if (result.data.severity === 'review') {
+          setInteractionWarning({ summary: result.data.summary, cautions: result.data.cautions });
+        }
+      })
+      .catch(() => {
+        // Silently fail — don't block checkout on interaction check errors
+      });
+  }, [cartItem]);
 
   const addresses = [
     {
@@ -149,6 +167,25 @@ export const CartCheckoutScreen: React.FC<CartCheckoutScreenProps> = ({
 
       {/* Main Container */}
       <main className="px-4 pt-3 space-y-4 max-w-2xl mx-auto w-full">
+        {/* Drug Interaction Warning Banner */}
+        {interactionWarning && (
+          <div className="bg-amber-50 border border-amber-300 rounded-xl p-3 text-xs text-amber-900">
+            <div className="flex gap-2">
+              <AlertTriangle className="w-5 h-5 shrink-0 text-amber-700" />
+              <div>
+                <p className="font-bold">Professional review recommended before purchase</p>
+                <p className="mt-1">{interactionWarning.summary}</p>
+                <ul className="mt-2 list-disc pl-5 space-y-1 text-slate-700">
+                  {interactionWarning.cautions.map((caution) => (
+                    <li key={caution}>{caution}</li>
+                  ))}
+                </ul>
+                <p className="mt-2 text-[10px] text-slate-600">This warning is informational only and does not block checkout. Consult a licensed pharmacist or clinician before purchase.</p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Pre-checkout Revalidation Banner (PRD FR-CART-02) */}
         {validationSuccess && (
           <div className="bg-emerald-50 border border-emerald-200/80 rounded-xl p-3 flex items-center justify-between text-xs text-emerald-800">
@@ -396,7 +433,7 @@ export const CartCheckoutScreen: React.FC<CartCheckoutScreenProps> = ({
             id="pay-and-order-btn"
             onClick={handleCheckout}
             disabled={isProcessing}
-            className="flex-1 max-w-[260px] h-12 rounded-xl bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-md shadow-teal-900/15 transition-all active:scale-[0.98] cursor-pointer"
+            className="flex-1 max-w-[260px] h-12 rounded-xl bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-md shadow-teal-900/15 transition-all active:scale-[0.98] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isProcessing ? (
               <>

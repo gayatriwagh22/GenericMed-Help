@@ -304,9 +304,9 @@ src/
 ### Milestone 2.4 — AI Dosage Assistant
 
 - [x] Build dosage safety-guidance endpoint (`POST /api/ai/dosage`)
-- [ ] Accept patient parameters (age, weight, condition)
-- [ ] Display AI-generated dosage suggestions with disclaimers
-- [ ] Integrate into `DrugDetailScreen.tsx`
+- [x] Accept and validate optional age, weight, and condition inputs
+- [x] Display AI-generated safety questions with medical disclaimers
+- [x] Integrate the dosage-safety screen into `DrugDetailScreen.tsx`
 
 **Acceptance Criteria:**
 - [ ] Dosage suggestions include proper medical disclaimers.
