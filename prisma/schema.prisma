@@ -1,0 +1,113 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model Medicine {
+  id                    String   @id
+  name                  String
+  saltName              String
+  therapeuticClass      String
+  complianceBadge       String
+  prescriptionRequired  Boolean
+  activeSaltMolecule    String
+  dissolutionGeneric    String
+  dissolutionBranded    String
+  bioavailabilityGeneric String
+  bioavailabilityBranded String
+  guidanceWarning       String
+  batchInspection       String   // JSON string of BatchInspection object
+  strengths             String   // JSON string of DosageStrength[]
+  forms                 String   // JSON string of DosageForm[]
+  packSizes             String   // JSON string of PackSize[]
+  brandEquivalents      String   // JSON string of BrandEquivalent[]
+  offers                PharmacyOffer[]
+  createdAt             DateTime @default(now())
+}
+
+model Pharmacy {
+  id                String   @id
+  name              String
+  type              String   // 'retail' | 'govt' | 'chain' | 'online'
+  rating            Float
+  reviewCount       Int
+  drugLicenseNumber String
+  nablCertified     Boolean
+  createdAt         DateTime @default(now())
+  offers            PharmacyOffer[]
+}
+
+model PharmacyOffer {
+  id              String   @id
+  medicineId      String
+  pharmacyId      String
+  price           Float
+  brandedPrice    Float
+  discountPercent Int
+  pricePerUnit    Float
+  deliveryTime    String
+  deliveryFee     Float
+  isFreeDelivery  Boolean
+  distanceKm      Float
+  stockStatus     String   // 'in_stock' | 'low_stock' | 'out_of_stock'
+  stockLastUpdated String
+  verifiedPartner Boolean
+  nablCertified   Boolean
+  badge           String?
+  medicine        Medicine @relation(fields: [medicineId], references: [id])
+  pharmacy        Pharmacy @relation(fields: [pharmacyId], references: [id])
+  createdAt       DateTime @default(now())
+}
+
+model User {
+  id           String   @id @default(cuid())
+  fullName     String
+  email        String   @unique
+  phone        String
+  role         String   // 'patient' | 'doctor' | 'pharmacist'
+  abhaId       String?
+  pincode      String?
+  avatarUrl    String?
+  isVerified   Boolean  @default(false)
+  passwordHash String
+  orders       Order[]
+  cartItems    CartItem[]
+  createdAt    DateTime @default(now())
+}
+
+model CartItem {
+  id         String @id @default(cuid())
+  userId     String
+  medicineId String
+  strengthId String
+  formId     String
+  packSizeId String
+  offerId    String
+  quantity   Int    @default(1)
+  user       User   @relation(fields: [userId], references: [id])
+  createdAt  DateTime @default(now())
+}
+
+model Order {
+  id              String   @id
+  userId          String
+  items           String   // JSON string of CartItem[] snapshot
+  subtotal        Float
+  savingsTotal    Float
+  deliveryFee     Float
+  packagingFee    Float
+  totalAmount     Float
+  status          String   // order status enum
+  pharmacyId      String
+  deliveryAddress String   // JSON string
+  paymentMethod   String
+  idempotencyKey  String   @unique
+  estimatedDelivery String
+  batchNumber     String
+  user            User     @relation(fields: [userId], references: [id])
+  createdAt       DateTime @default(now())
+}
