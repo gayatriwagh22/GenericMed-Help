@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { UserProfile } from '../types';
+import { login, register } from '../api/auth';
+import { ApiClientError } from '../api/client';
 import { 
   Mail, 
   Lock, 
@@ -27,6 +29,7 @@ interface AuthScreenProps {
   initialMode?: 'login' | 'register';
   currentUser?: UserProfile | null;
   onLoginSuccess: (user: UserProfile) => void;
+  onAuthTokens?: (accessToken: string, refreshToken: string) => void;
   onLogout?: () => void;
   onBack: () => void;
 }
@@ -35,6 +38,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
   initialMode = 'login',
   currentUser,
   onLoginSuccess,
+  onAuthTokens,
   onLogout,
   onBack,
 }) => {
@@ -80,15 +84,13 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
   };
 
   // Handle Login Submit
-  const handleLoginSubmit = (e: React.FormEvent) => {
+  const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
 
     if (loginMethod === 'otp') {
-      if (!otpCode || otpCode.trim().length !== 4) {
-        setErrorMessage('Please enter the 4-digit verification code');
-        return;
-      }
+      setErrorMessage('OTP login is not available yet. Please use your password.');
+      return;
     } else {
       if (!loginIdentifier.trim()) {
         setErrorMessage('Please enter your email or mobile number');
@@ -100,26 +102,20 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
       }
     }
 
-    setIsLoading(true);
-    setTimeout(() => {
+    try {
+      setIsLoading(true);
+      const result = await login(loginIdentifier, loginPassword);
+      onAuthTokens?.(result.data.accessToken, result.data.refreshToken);
+      onLoginSuccess(result.data.user);
+    } catch (error) {
+      setErrorMessage(error instanceof ApiClientError ? error.message : 'Unable to sign in. Please try again.');
+    } finally {
       setIsLoading(false);
-      const authenticatedUser: UserProfile = {
-        id: 'USR-' + Math.floor(100000 + Math.random() * 900000),
-        fullName: loginIdentifier.includes('@') ? 'Dr. Priya Sharma' : 'Patient User',
-        email: loginIdentifier.includes('@') ? loginIdentifier : 'user@genericmed.in',
-        phone: loginIdentifier.includes('@') ? '+91 98765 43210' : loginIdentifier,
-        role: 'patient',
-        abhaId: '91-4820-1940-5821',
-        pincode: '560103',
-        avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=250',
-        isVerified: true,
-      };
-      onLoginSuccess(authenticatedUser);
-    }, 650);
+    }
   };
 
   // Handle Register Submit
-  const handleRegisterSubmit = (e: React.FormEvent) => {
+  const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
 
@@ -148,26 +144,16 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
       return;
     }
 
-    setIsLoading(true);
-    setTimeout(() => {
+    try {
+      setIsLoading(true);
+      const result = await register({ fullName: regFullName, email: regEmail, phone: regPhone, password: regPassword, role: regRole });
+      onAuthTokens?.(result.data.accessToken, result.data.refreshToken);
+      onLoginSuccess(result.data.user);
+    } catch (error) {
+      setErrorMessage(error instanceof ApiClientError ? error.message : 'Unable to create your account. Please try again.');
+    } finally {
       setIsLoading(false);
-      const newUser: UserProfile = {
-        id: 'USR-' + Math.floor(100000 + Math.random() * 900000),
-        fullName: regFullName,
-        email: regEmail,
-        phone: regPhone.startsWith('+91') ? regPhone : `+91 ${regPhone}`,
-        role: regRole,
-        abhaId: regAbhaId.trim() || undefined,
-        pincode: '560001',
-        avatarUrl: regRole === 'doctor'
-          ? 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&q=80&w=250'
-          : regRole === 'pharmacist'
-          ? 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&q=80&w=250'
-          : 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=250',
-        isVerified: true,
-      };
-      onLoginSuccess(newUser);
-    }, 700);
+    }
   };
 
   // Preset demo logins for fast exploration

@@ -1,0 +1,3 @@
+-- SQLite development schema. Applied automatically by server/config/database.ts.
+-- It creates medicines, pharmacies, pharmacy offers, users, cart items, and orders.
+-- Keep this file as the auditable migration record; production PostgreSQL migration is a deployment concern.

@@ -17,7 +17,10 @@ export const authenticate = (req: AuthRequest, res: Response, next: NextFunction
   }
 
   const token = authHeader.split(' ')[1];
-  const jwtSecret = process.env.JWT_SECRET || 'fallback_secret_for_dev_only';
+  const jwtSecret = process.env.JWT_SECRET;
+  if (!jwtSecret) {
+    return res.status(500).json({ error: 'JWT is not configured', code: 'CONFIGURATION_ERROR' });
+  }
 
   try {
     const payload = jwt.verify(token, jwtSecret) as { userId: string; role: string };
@@ -26,4 +29,11 @@ export const authenticate = (req: AuthRequest, res: Response, next: NextFunction
   } catch (err) {
     return res.status(401).json({ error: 'Invalid token', code: 'INVALID_TOKEN' });
   }
+};
+
+export const authorize = (...roles: string[]) => (req: AuthRequest, res: Response, next: NextFunction) => {
+  if (!req.user || !roles.includes(req.user.role)) {
+    return res.status(403).json({ error: 'Forbidden', code: 'FORBIDDEN' });
+  }
+  next();
 };

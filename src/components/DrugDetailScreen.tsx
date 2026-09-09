@@ -7,6 +7,7 @@ interface DrugDetailScreenProps {
   onCompareOffers: (medicine: CanonicalMedicine, strength: DosageStrength, form: DosageForm, pack: PackSize) => void;
   onBack: () => void;
   onOpenProfile?: () => void;
+  onOpenDosageSafety?: () => void;
   isBookmarked: boolean;
   onToggleBookmark: () => void;
 }
@@ -15,6 +16,7 @@ export const DrugDetailScreen: React.FC<DrugDetailScreenProps> = ({
   medicine,
   onCompareOffers,
   onBack,
+  onOpenDosageSafety,
   isBookmarked,
   onToggleBookmark,
 }) => {
@@ -384,6 +386,7 @@ export const DrugDetailScreen: React.FC<DrugDetailScreenProps> = ({
             <p className="text-xs text-[#3d4947] leading-relaxed">
               {medicine.guidanceWarning}
             </p>
+            <button type="button" onClick={onOpenDosageSafety} className="mt-2 text-xs font-bold text-[#00685f] hover:underline">Review medicine safety questions</button>
           </div>
         </div>
 

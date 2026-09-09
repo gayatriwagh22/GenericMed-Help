@@ -38,6 +38,20 @@ Copy this template for each new release. Place newest entries at the top.
 
 _Changes that are in development but not yet tagged for release._
 
+### Added
+- Phase 1 Express backend foundation: health, medicines, authentication, cart, order, and profile endpoints.
+- SQLite-backed relational development database with catalog and pharmacy seed data.
+- JWT authentication, bcrypt password hashing, pagination, search, consistent errors, and idempotent order placement.
+- Shared frontend API modules and live password-based registration/login integration.
+- Guardrailed Gemini proxy with AI search, interaction-screening, and dosage-safety endpoints.
+- AI-ranked catalog suggestions with safe fallback to standard catalog search.
+- Medicine interaction checker interface with AI safety disclaimers and professional-review guidance.
+- Live pharmacy-offer loading in the comparison screen, including retry and loading states.
+- Authenticated cart creation when an offer is selected and idempotent API-backed checkout.
+- API-backed catalog and home offer discovery with loading/retry states.
+- Live order-status refresh through the tracking endpoint, with a graceful fallback message.
+- Natural-language, brand, and salt-name catalog matching for AI search, with a deterministic fallback when Gemini is unavailable.
+
 ---
 
 ## [0.1.0] — 2026-09-08

@@ -1,6 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { CanonicalMedicine, PharmacyOffer, UserProfile } from '../types';
-import { MEDICINES, PHARMACY_OFFERS } from '../data/mockData';
+import { aiSearchMedicines } from '../api/ai';
+import { useMedicines, useOffers } from '../hooks/useMedicines';
 import { 
   Search, 
   Sparkles, 
@@ -32,6 +33,7 @@ interface CatalogSearchScreenProps {
   onSelectOffer?: (offer: PharmacyOffer, med: CanonicalMedicine) => void;
   onCompareOffers?: (med: CanonicalMedicine) => void;
   onOpenArchitecture?: () => void;
+  onOpenInteractionChecker?: () => void;
   currentUser?: UserProfile | null;
   onOpenAuth?: (mode?: 'login' | 'register') => void;
 }
@@ -40,6 +42,7 @@ export const CatalogSearchScreen: React.FC<CatalogSearchScreenProps> = ({
   onSelectMedicine,
   onSelectOffer,
   onCompareOffers,
+  onOpenInteractionChecker,
   currentUser,
   onOpenAuth,
 }) => {
@@ -48,6 +51,37 @@ export const CatalogSearchScreen: React.FC<CatalogSearchScreenProps> = ({
   const [homeView, setHomeView] = useState<'all' | 'offers' | 'medicines'>('all');
   const [selectedOfferMedId, setSelectedOfferMedId] = useState<string>('paracetamol-ip');
   const [offerFilter, setOfferFilter] = useState<'all' | 'govt' | 'fastest' | 'free_delivery'>('all');
+  const [aiSuggestions, setAiSuggestions] = useState<Array<{ medicine: CanonicalMedicine; confidence: number; rationale: string }>>([]);
+  const [isAiSearching, setIsAiSearching] = useState(false);
+  const [aiSearchError, setAiSearchError] = useState<string | null>(null);
+  const { medicines, loading: medicinesLoading, error: medicinesError, refetch: refetchMedicines } = useMedicines();
+
+  useEffect(() => {
+    const query = searchQuery.trim();
+    if (query.length < 3) {
+      setAiSuggestions([]);
+      setAiSearchError(null);
+      return;
+    }
+    let active = true;
+    const timer = window.setTimeout(async () => {
+      try {
+        setIsAiSearching(true);
+        setAiSearchError(null);
+        const result = await aiSearchMedicines(query);
+        if (!active) return;
+        const matches = result.data.suggestions
+          .map(suggestion => ({ medicine: medicines.find(medicine => medicine.id === suggestion.medicineId), confidence: suggestion.confidence, rationale: suggestion.rationale }))
+          .filter((suggestion): suggestion is { medicine: CanonicalMedicine; confidence: number; rationale: string } => Boolean(suggestion.medicine));
+        setAiSuggestions(matches);
+      } catch {
+        if (active) setAiSearchError('AI suggestions are currently unavailable. Standard catalog search remains available.');
+      } finally {
+        if (active) setIsAiSearching(false);
+      }
+    }, 450);
+    return () => { active = false; window.clearTimeout(timer); };
+  }, [medicines, searchQuery]);
 
   const categories = [
     { name: 'All', icon: Pill },
@@ -60,16 +94,24 @@ export const CatalogSearchScreen: React.FC<CatalogSearchScreenProps> = ({
 
   // Currently focused medicine for live offers calculation
   const currentOfferMedicine = useMemo(() => {
-    return MEDICINES.find((m) => m.id === selectedOfferMedId) || MEDICINES[0];
-  }, [selectedOfferMedId]);
+    return medicines.find((medicine) => medicine.id === selectedOfferMedId) || medicines[0];
+  }, [medicines, selectedOfferMedId]);
+  const { offers, loading: offersLoading, error: offersError, refetch: refetchOffers } = useOffers(currentOfferMedicine?.id);
+
+  useEffect(() => {
+    if (currentOfferMedicine && currentOfferMedicine.id !== selectedOfferMedId) {
+      setSelectedOfferMedId(currentOfferMedicine.id);
+    }
+  }, [currentOfferMedicine, selectedOfferMedId]);
 
   // Dynamic price adjustment based on selected medicine multiplier
   const dynamicOffers = useMemo(() => {
+    if (!currentOfferMedicine) return [];
     const defaultStrength = currentOfferMedicine.strengths[0];
     const baseMultiplier = defaultStrength.multiplier || 1;
     const baseMrp = defaultStrength.brandedPricePerStrip || 34;
 
-    return PHARMACY_OFFERS.map((off) => {
+    return offers.map((off) => {
       const adjustedPrice = +(off.price * baseMultiplier).toFixed(2);
       const adjustedMrp = +(baseMrp).toFixed(2);
       const discount = Math.round(((adjustedMrp - adjustedPrice) / adjustedMrp) * 100);
@@ -83,12 +125,12 @@ export const CatalogSearchScreen: React.FC<CatalogSearchScreenProps> = ({
         pricePerUnit: unitPrice,
       };
     });
-  }, [currentOfferMedicine]);
+  }, [currentOfferMedicine, offers]);
 
   // Filtered offers by user selection
   const filteredOffers = useMemo(() => {
     return dynamicOffers.filter((off) => {
-      if (offerFilter === 'govt') return off.pharmacyType === 'government';
+      if (offerFilter === 'govt') return off.pharmacyType === 'govt';
       if (offerFilter === 'fastest') return off.deliveryTime.includes('45 mins') || off.deliveryTime.includes('2 hours');
       if (offerFilter === 'free_delivery') return off.isFreeDelivery;
       return true;
@@ -96,7 +138,7 @@ export const CatalogSearchScreen: React.FC<CatalogSearchScreenProps> = ({
   }, [dynamicOffers, offerFilter]);
 
   const filteredMedicines = useMemo(() => {
-    return MEDICINES.filter((med) => {
+    return medicines.filter((med) => {
       const q = searchQuery.toLowerCase().trim();
       const matchesSearch =
         !q ||
@@ -110,7 +152,15 @@ export const CatalogSearchScreen: React.FC<CatalogSearchScreenProps> = ({
 
       return matchesSearch && matchesCategory;
     });
-  }, [searchQuery, selectedCategory]);
+  }, [medicines, searchQuery, selectedCategory]);
+
+  if (medicinesLoading || offersLoading) {
+    return <div className="min-h-screen bg-[#faf8ff] p-6 text-center text-sm text-slate-600">Loading the medicine catalog…</div>;
+  }
+
+  if (medicinesError || offersError || !currentOfferMedicine) {
+    return <div className="min-h-screen bg-[#faf8ff] p-6 text-center"><p className="text-sm text-red-700">{medicinesError || offersError || 'No medicines are available.'}</p><button type="button" onClick={() => { refetchMedicines(); refetchOffers(); }} className="mt-3 rounded-xl bg-teal-700 px-4 py-2 text-xs font-bold text-white">Try again</button></div>;
+  }
 
   return (
     <div className="flex flex-col w-full min-h-screen bg-[#faf8ff] text-[#131b2e] pb-24">
@@ -232,6 +282,24 @@ export const CatalogSearchScreen: React.FC<CatalogSearchScreenProps> = ({
             />
           </div>
 
+          {searchQuery.trim().length >= 3 && (
+            <div className="mt-2 rounded-xl bg-white/95 text-slate-800 px-3 py-2 text-xs shadow-sm" aria-live="polite">
+              {isAiSearching && <span className="text-teal-700 font-semibold">Finding catalog matches…</span>}
+              {!isAiSearching && aiSuggestions.length > 0 && (
+                <div className="space-y-1.5">
+                  <span className="font-bold text-teal-800">AI catalog matches</span>
+                  {aiSuggestions.map(({ medicine, rationale }) => (
+                    <button key={medicine.id} onClick={() => onSelectMedicine(medicine)} className="block w-full text-left hover:text-teal-700 transition-colors">
+                      <span className="font-semibold">{medicine.name}</span><span className="text-slate-500"> — {rationale}</span>
+                    </button>
+                  ))}
+                  <span className="block text-[10px] text-slate-500">AI suggestions are informational and not medical advice.</span>
+                </div>
+              )}
+              {aiSearchError && <span className="text-amber-700">{aiSearchError}</span>}
+            </div>
+          )}
+
           {/* Popular brand pills */}
           <div className="flex items-center gap-1.5 flex-wrap pt-1 text-xs text-teal-200">
             <span className="font-semibold text-white">Popular:</span>
@@ -245,6 +313,7 @@ export const CatalogSearchScreen: React.FC<CatalogSearchScreenProps> = ({
               </button>
             ))}
           </div>
+          <button type="button" onClick={onOpenInteractionChecker} className="mt-2 text-xs font-semibold text-teal-100 underline underline-offset-2 hover:text-white">Check possible medicine interactions</button>
         </div>
       </div>
 
@@ -332,7 +401,7 @@ export const CatalogSearchScreen: React.FC<CatalogSearchScreenProps> = ({
             </div>
 
             <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
-              {MEDICINES.map((med) => {
+              {medicines.map((med) => {
                 const isSelected = med.id === selectedOfferMedId;
                 return (
                   <button

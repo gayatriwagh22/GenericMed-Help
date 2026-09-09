@@ -136,4 +136,6 @@ export type AppScreen =
   | 'order_tracking'
   | 'partner_portal'
   | 'architecture'
+  | 'interaction_checker'
+  | 'dosage_safety'
   | 'auth';

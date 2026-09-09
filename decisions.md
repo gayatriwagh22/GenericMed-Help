@@ -46,6 +46,42 @@ _Explain why this decision was made over alternatives._
 
 ---
 
+### DEC-007: SQLite for the Phase 1 Local Backend
+
+| Field | Details |
+|---|---|
+| **Decision ID** | DEC-007 |
+| **Date** | 2026-09-09 |
+| **Status** | `accepted` |
+| **Deciders** | Project implementation |
+
+**Context / Problem:** Phase 1 needs a running, seedable relational database without requiring external infrastructure during local development.
+
+**Decision:** Use SQLite through Node.js's built-in `node:sqlite` for the Phase 1 development backend. Preserve the existing Prisma schema as a model reference; migrate to PostgreSQL before multi-instance production deployment.
+
+**Reasoning:** SQLite provides transactional relational storage, foreign keys, indexes, and a zero-setup developer experience. Node 22 supplies the driver, so no native dependency or database service is required.
+
+**Impact on Project:** `prisma/dev.db` is generated locally; the server initializes the relational schema and seeds the existing typed mock catalog on startup. Production data infrastructure remains a Phase 3 deployment decision.
+
+---
+
+### DEC-008: Guardrailed Server-Side Gemini Access
+
+| Field | Details |
+|---|---|
+| **Decision ID** | DEC-008 |
+| **Date** | 2026-09-09 |
+| **Status** | `accepted` |
+| **Deciders** | Project implementation |
+
+**Decision:** Gemini requests are made only from the Express server. Results must be JSON, are cached for ten minutes, rate-limited per client IP, and always carry a medical-information disclaimer.
+
+**Reasoning:** This protects the API key and keeps model output within catalog discovery and safety education. The dosage endpoint intentionally does not supply individualized dosage or treatment instructions.
+
+**Impact on Project:** `GEMINI_API_KEY` is required only on the server; browsers call `/api/ai/*` endpoints and never receive the key.
+
+---
+
 ### DEC-001: React + Vite + TypeScript as Frontend Stack
 
 | Field                  | Details                              |

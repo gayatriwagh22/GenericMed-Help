@@ -26,7 +26,7 @@
 | **Project Name**  | GenericMed Help                                                       |
 | **Description**   | Online generic medicine price comparison & purchase platform with canonical variant matrix, bioequivalence verification, and multi-pharmacy offer comparison |
 | **Target Users**  | Patients, Doctors, Pharmacists (India-focused)                        |
-| **Current Stage** | Prototype / Frontend Demo (mock data, no backend)                     |
+| **Current Stage** | Phase 1 backend foundation and Phase 2 safety features in progress    |
 | **License**       | Apache-2.0                                                           |
 | **Repository**    | `gayatriwagh22/GenericMed-Help`                                      |
 
@@ -56,13 +56,14 @@ GenericMed Help helps users find **affordable generic alternatives** to branded 
 | Motion (Framer Motion) | 12.x       | Animations & transitions               |
 | Plus Jakarta Sans      | (CDN)      | Typography                             |
 
-### Backend (Planned / Minimal)
+### Backend (Phase 1 Foundation)
 
 | Technology             | Version    | Purpose                                |
 |------------------------|------------|----------------------------------------|
 | Express                | 4.21.x     | Server-side API proxy                  |
 | `@google/genai`        | 2.4.x      | Google Gemini AI SDK                   |
 | dotenv                 | 17.x       | Environment variable loading           |
+| Node `node:sqlite`     | Node 22+   | Local relational development database  |
 
 ### Dev Tools
 
@@ -126,7 +127,7 @@ GenericMed Help helps users find **affordable generic alternatives** to branded 
 
 ### 🔲 High Priority
 
-- [ ] **Backend API** — Express server with real endpoints (currently mock data only).
+- [x] **Backend API** — Express server with medicines, authentication, cart, order, profile, and AI endpoints.
 - [ ] **Database integration** — PostgreSQL or MongoDB for persistent data storage.
 - [ ] **Real authentication** — JWT/session-based auth (currently mock user).
 - [ ] **Gemini AI integration** — Smart medicine search, drug interaction checks, dosage recommendations.
@@ -137,7 +138,9 @@ GenericMed Help helps users find **affordable generic alternatives** to branded 
 - [ ] **Search autocomplete** — AI-powered medicine name suggestions.
 - [ ] **Drug interaction checker** — Warn users about contraindications.
 - [ ] **Prescription upload** — OCR-based prescription parsing.
-- [ ] **User order history** — Persistent order records.
+- [x] **Persistent order placement** — Authenticated checkout creates idempotent server-side orders.
+- [x] **Live catalog and order tracking** — Home catalog, offer discovery, and order tracking query the backend with user-facing fallback states.
+- [x] **Resilient AI catalog search** — Search recognizes common symptom classes plus brand and salt names, and remains usable through catalog matching if Gemini is unavailable.
 - [ ] **Pharmacy reviews system** — User-generated ratings and reviews.
 - [ ] **Push notifications** — Order status updates.
 - [ ] **PWA support** — Offline access and installability.
@@ -350,4 +353,4 @@ This creates a multi-dimensional selection matrix: **Medicine → Strength → F
 
 ---
 
-> **Last Updated:** 2026-09-08
+> **Last Updated:** 2026-09-09

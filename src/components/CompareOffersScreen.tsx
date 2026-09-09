@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { CanonicalMedicine, DosageStrength, DosageForm, PackSize, PharmacyOffer } from '../types';
-import { PHARMACY_OFFERS } from '../data/mockData';
+import { useOffers } from '../hooks/useMedicines';
 import { 
   ArrowLeft, 
   CheckCircle2, 
@@ -39,10 +39,11 @@ export const CompareOffersScreen: React.FC<CompareOffersScreenProps> = ({
   const [sortOption, setSortOption] = useState<SortOption>('price_low');
   const [filterOption, setFilterOption] = useState<FilterOption>('all');
   const [selectedOfferId, setSelectedOfferId] = useState<string | null>(null);
+  const { offers, loading, error, refetch } = useOffers(medicine.id);
 
   // Scaled prices for the selected variant pack & strength
   const calculatedOffers = useMemo(() => {
-    return PHARMACY_OFFERS.map((baseOffer) => {
+    return offers.map((baseOffer) => {
       // Scale price according to pack size and strength multiplier
       const scaledPrice = Math.round(
         (baseOffer.price * (pack.count / 15) * strength.multiplier) * 100
@@ -61,7 +62,7 @@ export const CompareOffersScreen: React.FC<CompareOffersScreenProps> = ({
         discountPercent: discountPct,
       };
     });
-  }, [pack, strength]);
+  }, [offers, pack, strength]);
 
   const filteredAndSortedOffers = useMemo(() => {
     let list = [...calculatedOffers];
@@ -87,8 +88,8 @@ export const CompareOffersScreen: React.FC<CompareOffersScreenProps> = ({
     return list;
   }, [calculatedOffers, filterOption, sortOption]);
 
-  const lowestPrice = Math.min(...calculatedOffers.map((o) => o.price));
-  const maxSavings = Math.max(...calculatedOffers.map((o) => o.discountPercent));
+  const lowestPrice = calculatedOffers.length ? Math.min(...calculatedOffers.map((o) => o.price)) : 0;
+  const maxSavings = calculatedOffers.length ? Math.max(...calculatedOffers.map((o) => o.discountPercent)) : 0;
 
   const handleSelect = (offer: PharmacyOffer) => {
     setSelectedOfferId(offer.id);
@@ -96,6 +97,14 @@ export const CompareOffersScreen: React.FC<CompareOffersScreenProps> = ({
       onSelectOffer(offer);
     }, 200);
   };
+
+  if (loading) {
+    return <div className="min-h-screen bg-[#faf8ff] p-6 text-center text-sm text-slate-600">Loading pharmacy offers…</div>;
+  }
+
+  if (error) {
+    return <div className="min-h-screen bg-[#faf8ff] p-6 text-center"><p className="text-sm text-red-700">{error}</p><button type="button" onClick={refetch} className="mt-3 rounded-xl bg-teal-700 px-4 py-2 text-xs font-bold text-white">Try again</button></div>;
+  }
 
   return (
     <div className="flex flex-col w-full min-h-screen bg-[#faf8ff] text-[#131b2e] pb-20">

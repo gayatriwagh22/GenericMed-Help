@@ -9,8 +9,8 @@
 
 ```
 Phase 0  ██████████████████████████████  COMPLETE    — Prototype & Frontend Demo
-Phase 1  ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░  NOT STARTED — Backend Foundation
-Phase 2  ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░  NOT STARTED — AI-Powered Features
+Phase 1  ███████░░░░░░░░░░░░░░░░░░░░░░░░  IN PROGRESS — Backend Foundation
+Phase 2  ███░░░░░░░░░░░░░░░░░░░░░░░░░░░  IN PROGRESS — AI-Powered Features
 Phase 3  ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░  NOT STARTED — Production Readiness
 Phase 4  ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░  NOT STARTED — Scale & Localization
 ```
@@ -18,12 +18,12 @@ Phase 4  ░░░░░░░░░░░░░░░░░░░░░░░�
 | Phase | Name                      | Status         | Dependencies     |
 |-------|---------------------------|----------------|------------------|
 | 0     | Prototype & Frontend Demo | ✅ Complete     | None             |
-| 1     | Backend Foundation        | 🔲 Not Started | Phase 0          |
-| 2     | AI-Powered Features       | 🔲 Not Started | Phase 1          |
+| 1     | Backend Foundation        | 🔄 In Progress | Phase 0          |
+| 2     | AI-Powered Features       | 🔄 In Progress | Phase 1          |
 | 3     | Production Readiness      | 🔲 Not Started | Phase 1          |
 | 4     | Scale & Localization      | 🔲 Not Started | Phase 3          |
 
-> **Current Phase:** Phase 0 — Complete. Ready to begin **Phase 1**.
+> **Current Phase:** Phase 1 — Backend Foundation in progress.
 
 ---
 
@@ -72,16 +72,16 @@ Phase 4  ░░░░░░░░░░░░░░░░░░░░░░░�
 
 > **Goal:** Build a real backend with database, authentication, and REST API to replace all mock data with live data.
 
-**Status:** `NOT STARTED` | **Estimated Duration:** 3–4 weeks
+**Status:** `IN PROGRESS` | **Started:** 2026-09-09 | **Estimated Duration:** 3–4 weeks
 
 ### Milestone 1.1 — Server Setup & Database
 
-- [ ] Initialize Express.js server in `server/` directory
-- [ ] Configure TypeScript for server-side code (`server/tsconfig.json`)
-- [ ] Set up PostgreSQL database (or MongoDB — decide and log in `decisions.md`)
-- [ ] Create database migration scripts
-- [ ] Implement connection pooling and error handling
-- [ ] Set up environment variable management (expand `.env.example`)
+- [x] Initialize Express.js server in `server/` directory
+- [x] Configure TypeScript for server-side code (`server/tsconfig.json`)
+- [x] Set up SQLite development database and log the decision in `decisions.md`
+- [x] Create database migration record and initialization schema
+- [x] Implement database initialization, foreign keys, indexes, and error handling
+- [x] Set up environment variable management (expand `.env.example`)
 
 **Files to Create:**
 ```
@@ -144,18 +144,18 @@ server/
 
 ### Milestone 1.3 — REST API Endpoints
 
-- [ ] `GET /api/medicines` — List medicines (paginated, filterable)
-- [ ] `GET /api/medicines/:id` — Get medicine detail
-- [ ] `GET /api/medicines/search?q=` — Full-text search by name/salt
-- [ ] `GET /api/medicines/:id/offers` — Get pharmacy offers for a medicine
-- [ ] `POST /api/cart` — Add item to user's cart
-- [ ] `GET /api/cart` — Get user's cart
-- [ ] `PUT /api/cart/:itemId` — Update cart item quantity
-- [ ] `DELETE /api/cart/:itemId` — Remove from cart
-- [ ] `POST /api/orders` — Place order (with idempotency key)
-- [ ] `GET /api/orders/:id` — Get order detail
-- [ ] `GET /api/orders/:id/tracking` — Get tracking status
-- [ ] `GET /api/user/profile` — Get authenticated user's profile
+- [x] `GET /api/medicines` — List medicines (paginated, filterable)
+- [x] `GET /api/medicines/:id` — Get medicine detail
+- [x] `GET /api/medicines/search?q=` — Search by name/salt
+- [x] `GET /api/medicines/:id/offers` — Get pharmacy offers for a medicine
+- [x] `POST /api/cart` — Add item to user's cart
+- [x] `GET /api/cart` — Get user's cart
+- [x] `PUT /api/cart/:itemId` — Update cart item quantity
+- [x] `DELETE /api/cart/:itemId` — Remove from cart
+- [x] `POST /api/orders` — Place order (with idempotency key)
+- [x] `GET /api/orders/:id` — Get order detail
+- [x] `GET /api/orders/:id/tracking` — Get tracking status
+- [x] `GET /api/user/profile` — Get authenticated user's profile
 
 **Files to Create:**
 ```
@@ -187,12 +187,12 @@ server/
 
 ### Milestone 1.4 — Authentication System
 
-- [ ] Implement user registration (`POST /api/auth/register`)
-- [ ] Implement user login with JWT (`POST /api/auth/login`)
-- [ ] Implement JWT refresh token flow
-- [ ] Add password hashing with bcrypt
-- [ ] Create auth middleware for protected routes
-- [ ] Connect `AuthScreen.tsx` to real API endpoints
+- [x] Implement user registration (`POST /api/auth/register`)
+- [x] Implement user login with JWT (`POST /api/auth/login`)
+- [x] Implement JWT refresh token flow
+- [x] Add password hashing with bcrypt
+- [x] Create auth middleware for protected routes
+- [x] Connect `AuthScreen.tsx` to real API endpoints
 - [ ] Implement role-based access control (patient, doctor, pharmacist)
 
 **Acceptance Criteria:**
@@ -206,12 +206,12 @@ server/
 
 ### Milestone 1.5 — Frontend API Integration
 
-- [ ] Create API client module (`src/api/client.ts`) with base URL config
+- [x] Create API client module (`src/api/client.ts`) with base URL config
 - [ ] Replace `MEDICINES` import in `App.tsx` with API fetch
-- [ ] Replace `PHARMACY_OFFERS` import with API fetch
-- [ ] Connect cart screen to cart API endpoints
-- [ ] Connect checkout to order placement API
-- [ ] Connect order tracking to order API
+- [x] Replace `PHARMACY_OFFERS` import in the offer-comparison flow with API fetch
+- [x] Connect offer selection to the authenticated cart API
+- [x] Connect checkout to idempotent order placement API
+- [x] Connect order tracking to order API
 - [ ] Add loading states and error handling to all screens
 - [ ] Add retry logic and offline state detection
 
@@ -254,15 +254,15 @@ src/
 
 > **Goal:** Integrate Google Gemini AI to add intelligent medicine search, drug interaction checking, and smart recommendations.
 
-**Status:** `NOT STARTED` | **Estimated Duration:** 2–3 weeks | **Depends on:** Phase 1
+**Status:** `IN PROGRESS` | **Started:** 2026-09-09 | **Estimated Duration:** 2–3 weeks | **Depends on:** Phase 1
 
 ### Milestone 2.1 — Gemini AI Infrastructure
 
-- [ ] Set up server-side Gemini API proxy (`server/services/geminiService.ts`)
-- [ ] Implement API key management and rate limiting
-- [ ] Create prompt templates for medical queries
-- [ ] Add response caching to reduce API costs
-- [ ] Implement error handling and fallback behavior
+- [x] Set up server-side Gemini API proxy (`server/services/geminiService.ts`)
+- [x] Implement API key management and rate limiting
+- [x] Create safety-constrained prompt templates for medical catalog queries
+- [x] Add response caching to reduce API costs
+- [x] Implement structured error handling for unavailable, empty, and invalid AI responses
 
 **Acceptance Criteria:**
 - [ ] Gemini API calls work through the Express proxy.
@@ -273,11 +273,11 @@ src/
 
 ### Milestone 2.2 — Smart Medicine Search
 
-- [ ] Build AI-powered search endpoint (`POST /api/ai/search`)
-- [ ] Implement natural language query understanding (e.g., "headache medicine for children")
-- [ ] Add synonym and salt-name matching (e.g., "Crocin" → Paracetamol IP)
-- [ ] Build autocomplete suggestions UI component
-- [ ] Integrate AI search into `CatalogSearchScreen.tsx`
+- [x] Build AI-powered search endpoint (`POST /api/ai/search`)
+- [x] Implement natural-language catalog-class matching for common symptom terms
+- [x] Add brand and salt-name matching (e.g., "Crocin" → Paracetamol IP)
+- [x] Build AI-ranked catalog suggestion UI
+- [x] Integrate AI search into `CatalogSearchScreen.tsx`
 
 **Acceptance Criteria:**
 - [ ] Users can search by symptom, brand name, or salt name.
@@ -288,10 +288,10 @@ src/
 
 ### Milestone 2.3 — Drug Interaction Checker
 
-- [ ] Build interaction check endpoint (`POST /api/ai/interactions`)
-- [ ] Create UI for adding multiple medicines to check interactions
-- [ ] Display interaction severity (mild, moderate, severe)
-- [ ] Show detailed explanations and recommendations
+- [x] Build interaction check endpoint (`POST /api/ai/interactions`)
+- [x] Create UI for adding multiple medicines to check interactions
+- [x] Display a cautious professional-review status
+- [x] Show AI-generated cautions and pharmacist/clinician questions
 - [ ] Add warnings during checkout if cart items have interactions
 
 **Acceptance Criteria:**
@@ -303,7 +303,7 @@ src/
 
 ### Milestone 2.4 — AI Dosage Assistant
 
-- [ ] Build dosage recommendation endpoint (`POST /api/ai/dosage`)
+- [x] Build dosage safety-guidance endpoint (`POST /api/ai/dosage`)
 - [ ] Accept patient parameters (age, weight, condition)
 - [ ] Display AI-generated dosage suggestions with disclaimers
 - [ ] Integrate into `DrugDetailScreen.tsx`

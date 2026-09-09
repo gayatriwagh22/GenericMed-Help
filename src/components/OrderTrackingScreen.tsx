@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Order } from '../types';
+import { getOrderTracking } from '../api/orders';
 import { 
   CheckCircle2, 
   Clock, 
@@ -19,15 +20,39 @@ import {
 interface OrderTrackingScreenProps {
   order: Order;
   onBackToCatalog: () => void;
+  accessToken: string | null;
 }
 
 export const OrderTrackingScreen: React.FC<OrderTrackingScreenProps> = ({
   order,
   onBackToCatalog,
+  accessToken,
 }) => {
   const [currentStep, setCurrentStep] = useState<number>(2); // 1: placed, 2: accepted, 3: packed, 4: out_for_delivery, 5: delivered
+  const [trackingError, setTrackingError] = useState<string | null>(null);
   const [reviewSubmitted, setReviewSubmitted] = useState(false);
   const [rating, setRating] = useState(5);
+
+  useEffect(() => {
+    if (!accessToken) return;
+    const stepByStatus: Record<Order['status'], number> = {
+      placed: 1,
+      pharmacy_accepted: 2,
+      packed: 3,
+      out_for_delivery: 4,
+      delivered: 5,
+      cancelled: 1,
+    };
+    let active = true;
+    getOrderTracking(accessToken, order.id)
+      .then((result) => {
+        if (active) setCurrentStep(stepByStatus[result.data.status]);
+      })
+      .catch(() => {
+        if (active) setTrackingError('Live tracking is currently unavailable. Showing the latest saved order status.');
+      });
+    return () => { active = false; };
+  }, [accessToken, order.id]);
   const [reviewText, setReviewText] = useState('');
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
 
@@ -80,6 +105,7 @@ export const OrderTrackingScreen: React.FC<OrderTrackingScreenProps> = ({
 
       {/* Main Content */}
       <main className="px-4 pt-4 space-y-4 max-w-2xl mx-auto w-full">
+        {trackingError && <p role="alert" className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">{trackingError}</p>}
         {/* Success Banner */}
         <div className="bg-gradient-to-r from-emerald-600 to-teal-700 text-white p-5 rounded-2xl shadow-md space-y-2">
           <div className="flex items-center justify-between">

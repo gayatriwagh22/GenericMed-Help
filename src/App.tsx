@@ -24,6 +24,10 @@ import { OrderTrackingScreen } from './components/OrderTrackingScreen';
 import { PartnerPortal } from './components/PartnerPortal';
 import { ArchitectureView } from './components/ArchitectureView';
 import { AuthScreen } from './components/AuthScreen';
+import { InteractionChecker } from './components/InteractionChecker';
+import { DosageSafetyScreen } from './components/DosageSafetyScreen';
+import { addToCart } from './api/cart';
+import { ApiClientError } from './api/client';
 import { 
   Pill, 
   ShoppingCart, 
@@ -46,17 +50,8 @@ export default function App() {
   const [isMobileFrame, setIsMobileFrame] = useState<boolean>(true);
 
   // Authentication state
-  const [currentUser, setCurrentUser] = useState<UserProfile | null>({
-    id: 'USR-901842',
-    fullName: 'Dr. Priya Sharma',
-    email: 'priya.sharma@example.com',
-    phone: '+91 98765 43210',
-    role: 'patient',
-    abhaId: '91-4820-1940-5821',
-    pincode: '560103',
-    avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=250',
-    isVerified: true,
-  });
+  const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
+  const [accessToken, setAccessToken] = useState<string | null>(null);
   const [authInitialMode, setAuthInitialMode] = useState<'login' | 'register'>('login');
 
   // Selected drug state (default to Paracetamol IP, exactly as in user mockup)
@@ -105,7 +100,13 @@ export default function App() {
     setCurrentScreen('compare_offers');
   };
 
-  const handleSelectOffer = (offer: PharmacyOffer) => {
+  const handleSelectOffer = async (offer: PharmacyOffer) => {
+    if (!accessToken) {
+      setAuthInitialMode('login');
+      setCurrentScreen('auth');
+      showToast('Sign in to add an item to your cart.');
+      return;
+    }
     const newItem: CartItem = {
       medicine: currentMedicine,
       strength: selectedStrength,
@@ -114,9 +115,20 @@ export default function App() {
       offer,
       quantity: 1,
     };
-    setCartItem(newItem);
-    showToast(`Added ${offer.pharmacyName} offer to cart!`);
-    setCurrentScreen('cart_checkout');
+    try {
+      await addToCart(accessToken, {
+        medicineId: currentMedicine.id,
+        strengthId: selectedStrength.id,
+        formId: selectedForm.id,
+        packSizeId: selectedPack.id,
+        offerId: offer.id,
+      });
+      setCartItem(newItem);
+      showToast(`Added ${offer.pharmacyName} offer to cart!`);
+      setCurrentScreen('cart_checkout');
+    } catch (error) {
+      showToast(error instanceof ApiClientError ? error.message : 'Unable to add this offer to your cart.');
+    }
   };
 
   const handleUpdateQuantity = (qty: number) => {
@@ -144,7 +156,13 @@ export default function App() {
     setCurrentScreen('drug_detail');
   };
 
-  const handleSelectOfferFromHome = (offer: PharmacyOffer, med: CanonicalMedicine) => {
+  const handleSelectOfferFromHome = async (offer: PharmacyOffer, med: CanonicalMedicine) => {
+    if (!accessToken) {
+      setAuthInitialMode('login');
+      setCurrentScreen('auth');
+      showToast('Sign in to add an item to your cart.');
+      return;
+    }
     setCurrentMedicine(med);
     const targetStrength = med.strengths[0];
     const targetForm = med.forms[0];
@@ -161,9 +179,20 @@ export default function App() {
       offer,
       quantity: 1,
     };
-    setCartItem(newItem);
-    showToast(`Added ${offer.pharmacyName} offer to cart!`);
-    setCurrentScreen('cart_checkout');
+    try {
+      await addToCart(accessToken, {
+        medicineId: med.id,
+        strengthId: targetStrength.id,
+        formId: targetForm.id,
+        packSizeId: targetPack.id,
+        offerId: offer.id,
+      });
+      setCartItem(newItem);
+      showToast(`Added ${offer.pharmacyName} offer to cart!`);
+      setCurrentScreen('cart_checkout');
+    } catch (error) {
+      showToast(error instanceof ApiClientError ? error.message : 'Unable to add this offer to your cart.');
+    }
   };
 
   const handleCompareOffersFromHome = (med: CanonicalMedicine) => {
@@ -385,6 +414,7 @@ export default function App() {
                   onSelectMedicine={handleSelectMedicineFromCatalog}
                   onSelectOffer={handleSelectOfferFromHome}
                   onCompareOffers={handleCompareOffersFromHome}
+                  onOpenInteractionChecker={() => setCurrentScreen('interaction_checker')}
                   currentUser={currentUser}
                   onOpenAuth={(mode) => {
                     setAuthInitialMode(mode || 'login');
@@ -402,8 +432,10 @@ export default function App() {
                     showToast(`Welcome back, ${user.fullName.split(' ')[0]}!`);
                     setCurrentScreen('home');
                   }}
+                  onAuthTokens={(token) => setAccessToken(token)}
                   onLogout={() => {
                     setCurrentUser(null);
+                    setAccessToken(null);
                     showToast('Signed out successfully');
                     setCurrentScreen('home');
                   }}
@@ -411,11 +443,15 @@ export default function App() {
                 />
               )}
 
+              {currentScreen === 'interaction_checker' && <InteractionChecker onBack={() => setCurrentScreen('home')} />}
+              {currentScreen === 'dosage_safety' && <DosageSafetyScreen medicine={currentMedicine.name} onBack={() => setCurrentScreen('drug_detail')} />}
+
               {currentScreen === 'drug_detail' && (
                 <DrugDetailScreen
                   medicine={currentMedicine}
                   onCompareOffers={handleOpenCompareOffers}
                   onBack={() => setCurrentScreen('home')}
+                  onOpenDosageSafety={() => setCurrentScreen('dosage_safety')}
                   isBookmarked={bookmarks.includes(currentMedicine.id)}
                   onToggleBookmark={() => handleToggleBookmark(currentMedicine.id)}
                 />
@@ -439,6 +475,7 @@ export default function App() {
                   onClearCart={handleClearCart}
                   onCompleteOrder={handleCompleteOrder}
                   onBack={() => setCurrentScreen('compare_offers')}
+                  accessToken={accessToken}
                 />
               )}
 
@@ -480,6 +517,7 @@ export default function App() {
                     }
                   }
                   onBackToCatalog={() => setCurrentScreen('home')}
+                  accessToken={accessToken}
                 />
               )}
 
@@ -574,6 +612,7 @@ export default function App() {
                 onSelectMedicine={handleSelectMedicineFromCatalog}
                 onSelectOffer={handleSelectOfferFromHome}
                 onCompareOffers={handleCompareOffersFromHome}
+                onOpenInteractionChecker={() => setCurrentScreen('interaction_checker')}
                 currentUser={currentUser}
                 onOpenAuth={(mode) => {
                   setAuthInitialMode(mode || 'login');
@@ -591,8 +630,10 @@ export default function App() {
                   showToast(`Welcome back, ${user.fullName.split(' ')[0]}!`);
                   setCurrentScreen('home');
                 }}
+                onAuthTokens={(token) => setAccessToken(token)}
                 onLogout={() => {
                   setCurrentUser(null);
+                  setAccessToken(null);
                   showToast('Signed out successfully');
                   setCurrentScreen('home');
                 }}
@@ -600,11 +641,15 @@ export default function App() {
               />
             )}
 
+            {currentScreen === 'interaction_checker' && <InteractionChecker onBack={() => setCurrentScreen('home')} />}
+            {currentScreen === 'dosage_safety' && <DosageSafetyScreen medicine={currentMedicine.name} onBack={() => setCurrentScreen('drug_detail')} />}
+
             {currentScreen === 'drug_detail' && (
               <DrugDetailScreen
                 medicine={currentMedicine}
                 onCompareOffers={handleOpenCompareOffers}
                 onBack={() => setCurrentScreen('home')}
+                onOpenDosageSafety={() => setCurrentScreen('dosage_safety')}
                 isBookmarked={bookmarks.includes(currentMedicine.id)}
                 onToggleBookmark={() => handleToggleBookmark(currentMedicine.id)}
               />
@@ -628,6 +673,7 @@ export default function App() {
                 onClearCart={handleClearCart}
                 onCompleteOrder={handleCompleteOrder}
                 onBack={() => setCurrentScreen('compare_offers')}
+                accessToken={accessToken}
               />
             )}
 
@@ -669,6 +715,7 @@ export default function App() {
                   }
                 }
                 onBackToCatalog={() => setCurrentScreen('home')}
+                accessToken={accessToken}
               />
             )}
 

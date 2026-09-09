@@ -1,14 +1,17 @@
 {
-  "name": "react-example",
+  "name": "genericmed-help",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.2.0",
   "type": "module",
   "scripts": {
     "dev": "vite --port=3000 --host=0.0.0.0",
     "build": "vite build",
     "preview": "vite preview",
     "clean": "rm -rf dist server.js",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "server": "tsx server/index.ts",
+    "db:seed": "tsx server/seeds/seedMockData.ts",
+    "dev:all": "concurrently -n fe,be -c cyan,green \"npm run dev\" \"npm run server\""
   },
   "dependencies": {
     "@google/genai": "^2.4.0",
@@ -27,9 +30,13 @@
     "vite": "^6.2.3"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^3.0.0",
+    "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
+    "@types/jsonwebtoken": "^9.0.9",
     "@types/node": "^22.14.0",
     "autoprefixer": "^10.4.21",
+    "concurrently": "^9.1.2",
     "esbuild": "^0.25.0",
     "tailwindcss": "^4.1.14",
     "tsx": "^4.21.0",

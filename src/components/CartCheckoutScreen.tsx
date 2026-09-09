@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { CartItem, Order } from '../types';
+import { placeOrder } from '../api/orders';
+import { ApiClientError } from '../api/client';
 import { 
   ArrowLeft, 
   CheckCircle2, 
@@ -23,6 +25,7 @@ interface CartCheckoutScreenProps {
   onClearCart: () => void;
   onCompleteOrder: (order: Order) => void;
   onBack: () => void;
+  accessToken: string | null;
 }
 
 export const CartCheckoutScreen: React.FC<CartCheckoutScreenProps> = ({
@@ -31,11 +34,13 @@ export const CartCheckoutScreen: React.FC<CartCheckoutScreenProps> = ({
   onClearCart,
   onCompleteOrder,
   onBack,
+  accessToken,
 }) => {
   const [selectedAddressIndex, setSelectedAddressIndex] = useState(0);
   const [selectedPayment, setSelectedPayment] = useState<string>('upi');
   const [isProcessing, setIsProcessing] = useState(false);
   const [validationSuccess, setValidationSuccess] = useState(true);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
 
   const addresses = [
     {
@@ -86,31 +91,25 @@ export const CartCheckoutScreen: React.FC<CartCheckoutScreenProps> = ({
   const deliveryFee = offer.isFreeDelivery ? 0 : offer.deliveryFee;
   const totalPayable = subtotal + deliveryFee;
 
-  const handleCheckout = () => {
+  const handleCheckout = async () => {
+    if (!accessToken) {
+      setCheckoutError('Please sign in before placing an order.');
+      return;
+    }
     setIsProcessing(true);
-    // Simulate payment idempotency and order snapshot creation
-    setTimeout(() => {
-      const newOrder: Order = {
-        id: `GMH-${Math.floor(100000 + Math.random() * 900000)}`,
-        createdAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        items: [cartItem],
-        subtotal,
-        savingsTotal: netSavings,
-        deliveryFee,
-        packagingFee: 0,
-        totalAmount: totalPayable,
-        status: 'pharmacy_accepted',
-        pharmacy: offer,
+    setCheckoutError(null);
+    try {
+      const idempotencyKey = crypto.randomUUID();
+      const result = await placeOrder(accessToken, idempotencyKey, {
         deliveryAddress: addresses[selectedAddressIndex],
-        paymentMethod: selectedPayment.toUpperCase(),
-        idempotencyKey: `IDEMP-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-        estimatedDelivery: offer.deliveryTime,
-        batchNumber: medicine.batchInspection.batchNumber,
-      };
-
+        paymentMethod: selectedPayment,
+      });
+      onCompleteOrder(result.data);
+    } catch (error) {
+      setCheckoutError(error instanceof ApiClientError ? error.message : 'Unable to place your order. Please try again.');
+    } finally {
       setIsProcessing(false);
-      onCompleteOrder(newOrder);
-    }, 900);
+    }
   };
 
   return (
@@ -415,6 +414,7 @@ export const CartCheckoutScreen: React.FC<CartCheckoutScreenProps> = ({
             )}
           </button>
         </div>
+        {checkoutError && <p role="alert" className="mx-auto mt-2 max-w-lg text-center text-xs font-medium text-red-700">{checkoutError}</p>}
       </div>
     </div>
   );

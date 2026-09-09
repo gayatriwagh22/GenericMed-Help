@@ -2,15 +2,20 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { errorHandler } from './middleware/errorHandler';
-
-// Route imports
-// import medicineRoutes from './routes/medicines';
-// import cartRoutes from './routes/cart';
-// import orderRoutes from './routes/orders';
-// import authRoutes from './routes/auth';
-// import userRoutes from './routes/user';
+import { db, initializeDatabase } from './config/database';
+import medicineRoutes from './routes/medicines';
+import cartRoutes from './routes/cart';
+import orderRoutes from './routes/orders';
+import authRoutes from './routes/auth';
+import userRoutes from './routes/users';
+import aiRoutes from './routes/ai';
 
 dotenv.config();
+
+for (const required of ['JWT_SECRET']) {
+  if (!process.env[required]) throw new Error(`Missing required environment variable: ${required}`);
+}
+initializeDatabase();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -19,16 +24,21 @@ const PORT = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json());
 
-// API Routes
-// app.use('/api/medicines', medicineRoutes);
-// app.use('/api/cart', cartRoutes);
-// app.use('/api/orders', orderRoutes);
-// app.use('/api/auth', authRoutes);
-// app.use('/api/user', userRoutes);
+app.use('/api/medicines', medicineRoutes);
+app.use('/api/cart', cartRoutes);
+app.use('/api/orders', orderRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/user', userRoutes);
+app.use('/api/ai', aiRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  try {
+    db.prepare('SELECT 1').get();
+    res.json({ status: 'ok', database: 'connected', timestamp: new Date().toISOString() });
+  } catch {
+    res.status(503).json({ error: 'Database unavailable', code: 'DATABASE_UNAVAILABLE' });
+  }
 });
 
 // Global Error Handler
